@@ -1,0 +1,52 @@
+module.exports = {
+  // 🎯 项目基本信息
+  projectName: "my-project", // TODO: 修改为你的项目名称
+  language: "js", // js | ts
+
+  // 📡 数据源配置 - 这是最重要的配置项
+  // 可以是：
+  // 1. 字符串路径：指向本地 JSON 文件，如 "./swagger.json"
+  // 2. URL 地址：HTTP/HTTPS 接口地址，如 "http://localhost:3000/api-docs"
+  // 3. JSON 对象：直接提供 swagger 数据
+  // 4. Promise 函数：返回 swagger JSON 数据的异步函数
+  source: "http://localhost:3000/api-docs", // TODO: 修改为你的 Swagger 文档地址
+  
+  // 📋 Swagger 版本配置
+  swaggerVersion: "auto", // "auto" | "2.0" | "3.0" - 自动检测或手动指定版本
+
+  // 📁 输出配置
+  outputDir: "./src/api", // 生成的 API 文件输出目录
+  generateTypes: true, // 是否生成类型定义
+  
+  // 📦 请求库导入配置
+  // TODO: 根据你的项目调整请求库导入语句
+  requestImport: "const axios = require('./request')", // 请求库导入语句
+  
+  // 📋 更新日志配置
+  updateLog: {
+    enabled: true, // 是否启用更新日志
+    outputPath: "./", // 日志输出路径，默认为配置文件同目录
+  },
+
+  // 🏷️ 模块名生成规则
+  moduleNaming: {
+    strategy: "tags", // 'tags' | 'custom'
+    // 如果使用 custom 策略，可以自定义函数：
+    customFunction: null,
+    // customFunction: (apiPath, operationId, tags) => {
+    //   // 自定义模块名生成逻辑
+    //   return "customModuleName";
+    // },
+  },
+
+  // 🔧 API 函数名生成规则
+  apiNaming: {
+    strategy: "operationId", // 'operationId' | 'custom'
+    // 如果使用 custom 策略，可以自定义函数：
+    customFunction: null,
+    // customFunction: (operationId, path) => {
+    //   // 自定义 API 函数名生成逻辑
+    //   return "customApiName";
+    // },
+  },
+};

@@ -1,0 +1,50 @@
+{
+  "name": "swigger2api",
+  "version": "1.0.0",
+  "description": "A powerful CLI tool to generate TypeScript/JavaScript API code from Swagger/OpenAPI documentation",
+  "main": "lib/index.js",
+  "bin": {
+    "swigger2api": "./bin/swigger2api.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build",
+    "build": "echo \"Build completed\""
+  },
+  "keywords": [
+    "swagger",
+    "openapi",
+    "api",
+    "typescript",
+    "javascript",
+    "code-generator",
+    "cli"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/swigger2api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/swigger2api/issues"
+  },
+  "homepage": "https://github.com/yourusername/swigger2api#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "commander": "^9.4.1",
+    "inquirer": "^8.2.5",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {},
+  "files": [
+    "bin/",
+    "lib/",
+    "templates/",
+    "README.md",
+    "LICENSE"
+  ]
+}

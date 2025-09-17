@@ -4,6 +4,9 @@ const crypto = require('crypto')
 const https = require('https')
 const http = require('http')
 
+// 全局配置变量
+let CONFIG = null
+
 // 读取配置文件
 function loadConfig() {
   const configPath = path.join(__dirname, '../swigger.config.js')
@@ -11,6 +14,8 @@ function loadConfig() {
   
   if (fs.existsSync(configPath)) {
     try {
+      // 清除require缓存，确保获取最新配置
+      delete require.cache[require.resolve(configPath)]
       // 直接 require 配置文件
       const config = require(configPath)
       console.log('✅ 已加载配置文件:', configPath)
@@ -44,8 +49,18 @@ function loadConfig() {
   }
 }
 
-// 全局配置
-const CONFIG = loadConfig()
+// 设置配置的函数
+function setConfig(config) {
+  CONFIG = config
+}
+
+// 获取配置的函数
+function getConfig() {
+  if (!CONFIG) {
+    CONFIG = loadConfig()
+  }
+  return CONFIG
+}
 
 // 检测字符串是否为 URL
 function isUrl(str) {
@@ -142,7 +157,7 @@ function extractVariableNameFromImport(importStatement) {
 
 // 从 source 配置获取 Swagger 数据
 async function getSwaggerDataFromSource() {
-  const { source } = CONFIG
+  const { source } = getConfig()
   
   if (!source) {
     throw new Error('❌ 未配置数据源 (source)')
@@ -174,8 +189,15 @@ async function getSwaggerDataFromSource() {
       if (path.isAbsolute(source)) {
         filePath = source
       } else {
-        // 使用当前工作目录而不是模块目录，这样相对路径就相对于配置文件所在目录
-        filePath = path.resolve(process.cwd(), source)
+        // 使用项目工作目录作为相对路径的基准目录
+        const config = getConfig()
+        const projectDir = config._projectDir || process.cwd()
+        console.log('🔍 调试信息:')
+        console.log(`   项目工作目录: ${projectDir}`)
+        console.log(`   当前工作目录: ${process.cwd()}`)
+        console.log(`   相对路径: ${source}`)
+        filePath = path.resolve(projectDir, source)
+        console.log(`   解析后路径: ${filePath}`)
       }
       
       if (!fs.existsSync(filePath)) {
@@ -369,7 +391,11 @@ function groupApiPathsByModule(paths) {
 }
 
 // 生成更新日志
-function generateUpdateLog(compareResult) {
+function generateUpdateLog(compareResult, isForced = false) {
+  console.log('🔍 generateUpdateLog 被调用')
+  console.log('🔍 compareResult.hasChanges:', compareResult.hasChanges)
+  console.log('🔍 isForced:', isForced)
+  
   const now = new Date()
   const timestamp = now.toLocaleString('zh-CN', {
     year: 'numeric',
@@ -382,31 +408,38 @@ function generateUpdateLog(compareResult) {
   
   let logContent = `## ${timestamp}\n\n`
   
-  // 按变更类型处理
-  const changeTypes = [
-    { key: 'added', label: '新增', count: compareResult.changes.added },
-    { key: 'modified', label: '修改', count: compareResult.changes.modified },
-    { key: 'deleted', label: '删除', count: compareResult.changes.deleted }
-  ]
-  
-  changeTypes.forEach(({ key, label, count }) => {
-    if (count > 0) {
-      logContent += `### ${label} (${count})\n\n`
-      
-      // 按模块分组
-      const moduleGroups = groupApiPathsByModule(compareResult.details[key])
-      const sortedModules = Object.keys(moduleGroups).sort()
-      
-      sortedModules.forEach(moduleName => {
-        const paths = moduleGroups[moduleName]
-        logContent += `#### ${moduleName} 模块\n`
-        paths.forEach(path => {
-          logContent += `- ${path}\n`
+  // 如果是强制模式且没有变化，记录强制重新生成
+  if (isForced && !compareResult.hasChanges) {
+    logContent += `### 强制重新生成\n\n`
+    logContent += `- 使用 --force 参数强制重新生成所有 API 文件\n`
+    logContent += `- 没有检测到 API 变化\n\n`
+  } else {
+    // 按变更类型处理
+    const changeTypes = [
+      { key: 'added', label: '新增', count: compareResult.changes.added },
+      { key: 'modified', label: '修改', count: compareResult.changes.modified },
+      { key: 'deleted', label: '删除', count: compareResult.changes.deleted }
+    ]
+    
+    changeTypes.forEach(({ key, label, count }) => {
+      if (count > 0) {
+        logContent += `### ${label} (${count})\n\n`
+        
+        // 按模块分组
+        const moduleGroups = groupApiPathsByModule(compareResult.details[key])
+        const sortedModules = Object.keys(moduleGroups).sort()
+        
+        sortedModules.forEach(moduleName => {
+          const paths = moduleGroups[moduleName]
+          logContent += `#### ${moduleName} 模块\n`
+          paths.forEach(path => {
+            logContent += `- ${path}\n`
+          })
+          logContent += '\n'
         })
-        logContent += '\n'
-      })
-    }
-  })
+      }
+    })
+  }
   
   logContent += '---\n\n'
   
@@ -416,42 +449,61 @@ function generateUpdateLog(compareResult) {
 // 追加更新日志到文件
 function appendUpdateLog(logContent) {
   // 检查是否启用了更新日志功能
-  const updateLogConfig = CONFIG.updateLog || { enabled: true, outputPath: "./" }
+  const updateLogConfig = getConfig().updateLog || { enabled: true, outputPath: "./" }
+  
+  console.log('📝 更新日志配置:', updateLogConfig)
+  console.log('📝 日志内容长度:', logContent.length)
   
   if (!updateLogConfig.enabled) {
+    console.log('❌ 更新日志功能未启用')
     return
   }
   
   // 确定日志文件路径
   let logDir
+  const config = getConfig()
+  const projectDir = config._projectDir || process.cwd()
+  
+  // 如果 outputPath 是绝对路径，检查是否是配置目录，如果是则改为项目目录
   if (path.isAbsolute(updateLogConfig.outputPath)) {
-    logDir = updateLogConfig.outputPath
+    // 如果 outputPath 指向配置目录，则改为项目目录
+    if (config._configDir && updateLogConfig.outputPath === config._configDir) {
+      logDir = projectDir
+    } else {
+      logDir = updateLogConfig.outputPath
+    }
   } else {
-    // 相对路径，相对于配置文件目录
-    logDir = path.resolve(CONFIG._configDir, updateLogConfig.outputPath)
+    // 相对路径，相对于项目工作目录
+    logDir = path.resolve(projectDir, updateLogConfig.outputPath)
   }
+  
+  console.log('📁 日志目录:', logDir)
   
   // 确保目录存在
   if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir, { recursive: true })
+    console.log('📁 创建日志目录:', logDir)
   }
   
   const logPath = path.join(logDir, 'SWIGGER_UPLOAD_LOG.md')
+  console.log('📄 日志文件路径:', logPath)
   
   let existingContent = ''
   if (fs.existsSync(logPath)) {
     existingContent = fs.readFileSync(logPath, 'utf8')
+    console.log('📄 读取现有日志内容，长度:', existingContent.length)
   }
   
   // 将新日志添加到文件开头
   const newContent = logContent + existingContent
   fs.writeFileSync(logPath, newContent, 'utf8')
+  console.log('✅ 日志文件已写入:', logPath)
 }
 
 // 生成函数名
 function generateFunctionName(operationId, method, path) {
   // 根据配置文件中的 apiNaming 策略生成函数名
-  const apiNamingConfig = CONFIG.apiNaming || { strategy: 'operationId' }
+  const apiNamingConfig = getConfig().apiNaming || { strategy: 'operationId' }
   
   // 如果配置了自定义函数，优先使用自定义函数
   if (apiNamingConfig.strategy === 'custom' && typeof apiNamingConfig.customFunction === 'function') {
@@ -825,7 +877,7 @@ function groupApisByTag(swaggerData) {
 // 生成模块名
 function generateModuleName(tag, path, operationId, tags) {
   // 根据配置文件中的 moduleNaming 策略生成模块名
-  const moduleNamingConfig = CONFIG.moduleNaming || { strategy: 'tags' }
+  const moduleNamingConfig = getConfig().moduleNaming || { strategy: 'tags' }
   
   // 如果配置了自定义函数，优先使用自定义函数
   if (moduleNamingConfig.strategy === 'custom' && typeof moduleNamingConfig.customFunction === 'function') {
@@ -1209,7 +1261,7 @@ function generateIndexFile(outputDir, folderNames) {
     content += `export * from './${folderName}'\n`
   })
   
-  const isTypeScript = CONFIG.language === 'ts'
+  const isTypeScript = getConfig().language === 'ts'
   const indexFileName = isTypeScript ? 'index.ts' : 'index.js'
   const indexPath = path.join(outputDir, indexFileName)
   fs.writeFileSync(indexPath, content, 'utf8')
@@ -1219,8 +1271,8 @@ function generateIndexFile(outputDir, folderNames) {
 async function generateApiFiles(options = {}) {
   try {
     console.log('🚀 开始生成 API 文件...')
-    console.log(`📋 项目名称: ${CONFIG.projectName}`)
-    console.log(`📂 输出目录: ${CONFIG.outputDir}`)
+    console.log(`📋 项目名称: ${getConfig().projectName}`)
+    console.log(`📂 输出目录: ${getConfig().outputDir}`)
     
     // 从 source 配置获取数据
     const swaggerData = await getSwaggerDataFromSource()
@@ -1246,24 +1298,38 @@ async function generateApiFiles(options = {}) {
       console.log('🔄 强制重新生成模式，忽略数据变化检查')
     }
     
-    if (compareResult.hasChanges) {
-      console.log('📝 检测到API变化:')
-      console.log(`   新增: ${compareResult.changes.added} 个接口`)
-      console.log(`   修改: ${compareResult.changes.modified} 个接口`)
-      console.log(`   删除: ${compareResult.changes.deleted} 个接口`)
+    // 生成更新日志（有变化或强制模式）
+    console.log('🔍 检查日志生成条件:')
+    console.log('🔍 compareResult.hasChanges:', compareResult.hasChanges)
+    console.log('🔍 options.force:', options.force)
+    console.log('🔍 条件结果:', compareResult.hasChanges || options.force)
+    
+    if (compareResult.hasChanges || options.force) {
+      if (compareResult.hasChanges) {
+        console.log('📝 检测到API变化:')
+        console.log(`   新增: ${compareResult.changes.added} 个接口`)
+        console.log(`   修改: ${compareResult.changes.modified} 个接口`)
+        console.log(`   删除: ${compareResult.changes.deleted} 个接口`)
+      }
       
       // 生成并追加更新日志
-      const logContent = generateUpdateLog(compareResult)
+      console.log('🔍 准备生成更新日志')
+      const logContent = generateUpdateLog(compareResult, options.force && !compareResult.hasChanges)
+      console.log('🔍 日志内容生成完成，长度:', logContent.length)
+      console.log('🔍 准备调用 appendUpdateLog')
       appendUpdateLog(logContent)
+      console.log('🔍 appendUpdateLog 调用完成')
       
       // 显示日志文件的实际路径
-      const updateLogConfig = CONFIG.updateLog || { enabled: true, outputPath: "./" }
+      const updateLogConfig = getConfig().updateLog || { enabled: true, outputPath: "./" }
       if (updateLogConfig.enabled) {
         let logDir
         if (path.isAbsolute(updateLogConfig.outputPath)) {
           logDir = updateLogConfig.outputPath
         } else {
-          logDir = path.resolve(CONFIG._configDir, updateLogConfig.outputPath)
+          const config = getConfig()
+          const projectDir = config._projectDir || process.cwd()
+          logDir = path.resolve(projectDir, updateLogConfig.outputPath)
         }
         const logPath = path.join(logDir, 'SWIGGER_UPLOAD_LOG.md')
         console.log(`📄 已更新日志到 ${logPath}`)
@@ -1278,10 +1344,12 @@ async function generateApiFiles(options = {}) {
     const groupedApis = groupApisByTag(swaggerData)
     
     // 确保输出目录存在
-    // 如果outputDir是相对路径，则相对于当前工作目录（配置文件目录）；如果是绝对路径，则直接使用
-    const outputDir = path.isAbsolute(CONFIG.outputDir) 
-      ? CONFIG.outputDir 
-      : path.resolve(process.cwd(), CONFIG.outputDir)
+    // 如果outputDir是相对路径，则相对于项目工作目录；如果是绝对路径，则直接使用
+    const config = getConfig()
+    const projectDir = config._projectDir || process.cwd()
+    const outputDir = path.isAbsolute(config.outputDir) 
+      ? config.outputDir 
+      : path.resolve(projectDir, config.outputDir)
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true })
     }
@@ -1290,7 +1358,7 @@ async function generateApiFiles(options = {}) {
 
     // 为每个标签生成对应的文件夹和文件
     const folderNames = []
-    const isTypeScript = CONFIG.language === 'ts'
+    const isTypeScript = getConfig().language === 'ts'
     Object.keys(groupedApis).forEach(tag => {
       const apis = groupedApis[tag]
       const moduleName = generateModuleName(tag, apis[0]?.path, apis[0]?.apiInfo?.operationId, [tag])
@@ -1379,5 +1447,7 @@ module.exports = {
   generateUpdateLog,
   appendUpdateLog,
   groupApisByTag,
-  groupApiPathsByModule
+  groupApiPathsByModule,
+  setConfig,
+  getConfig
 }

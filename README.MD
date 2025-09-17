@@ -50,7 +50,9 @@ This will create a `swigger2api.config.js` or `swigger2api.config.ts` file in yo
 Edit the generated configuration file and update these essential settings:
 
 ```javascript
-module.exports = {
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
   // 🎯 Required: Your project name
   projectName: "my-awesome-project", // TODO: Change this
 
@@ -65,7 +67,7 @@ module.exports = {
   outputDir: "./src/api",
   generateTypes: true,
   // ... more options
-};
+});
 ```
 
 ### 3. Generate API Code
@@ -97,7 +99,9 @@ swigger2api generate --config ./custom.config.js
 ### Advanced Configuration
 
 ```javascript
-module.exports = {
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
   // Update log configuration
   updateLog: {
     enabled: true,
@@ -115,7 +119,7 @@ module.exports = {
     strategy: "operationId", // "operationId" | "custom"
     customFunction: null, // Custom naming function
   },
-};
+});
 ```
 
 ## Data Source Types
@@ -124,31 +128,49 @@ The `source` configuration supports multiple types:
 
 ### 1. URL (Most Common)
 ```javascript
-source: "http://localhost:3000/api-docs"
-source: "https://api.example.com/swagger.json"
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
+  source: "http://localhost:3000/api-docs"
+  // or
+  // source: "https://api.example.com/swagger.json"
+});
 ```
 
 ### 2. Local File Path
 ```javascript
-source: "./swagger.json"
-source: "/path/to/swagger.json"
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
+  source: "./swagger.json"
+  // or
+  // source: "/path/to/swagger.json"
+});
 ```
 
 ### 3. JSON Object
 ```javascript
-source: {
-  openapi: "3.0.0",
-  info: { title: "My API", version: "1.0.0" },
-  paths: { /* ... */ }
-}
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
+  source: {
+    openapi: "3.0.0",
+    info: { title: "My API", version: "1.0.0" },
+    paths: { /* ... */ }
+  }
+});
 ```
 
 ### 4. Async Function
 ```javascript
-source: async () => {
-  const response = await fetch("http://api.example.com/docs");
-  return response.json();
-}
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
+  source: async () => {
+    const response = await fetch("http://api.example.com/docs");
+    return response.json();
+  }
+});
 ```
 
 ## Generated File Structure
@@ -200,32 +222,38 @@ swigger2api generate --config ./custom.config.js
 
 ```typescript
 // swigger2api.config.ts
-export default {
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
   projectName: "my-app",
   language: "ts" as const,
   source: "http://localhost:8080/v3/api-docs",
   requestImport: "import request from '@/utils/request'",
   outputDir: "./src/api",
-};
+});
 ```
 
 ### JavaScript with Custom Axios
 
 ```javascript
 // swigger2api.config.js
-module.exports = {
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
   projectName: "my-app",
   language: "js",
   source: "https://petstore.swagger.io/v2/swagger.json",
   requestImport: "const axios = require('./http-client')",
   outputDir: "./api",
-};
+});
 ```
 
 ### Custom Module Naming
 
 ```javascript
-module.exports = {
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
   projectName: "my-app",
   source: "http://localhost:3000/api-docs",
   moduleNaming: {
@@ -236,7 +264,7 @@ module.exports = {
       return pathParts[1] || 'default';
     },
   },
-};
+});
 ```
 
 ## Troubleshooting

@@ -1,15 +1,24 @@
 {
   "name": "swigger2api",
-  "version": "1.0.5",
+  "version": "1.0.1",
   "description": "A powerful CLI tool to generate TypeScript/JavaScript API code from Swagger/OpenAPI documentation",
-  "main": "lib/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
   "bin": {
     "swigger2api": "./bin/swigger2api.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublishOnly": "npm run build",
-    "build": "echo \"Build completed\""
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "clean": "rimraf dist"
   },
   "keywords": [
     "swagger",
@@ -39,10 +48,17 @@
     "chalk": "^4.1.2",
     "ora": "^5.4.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "rollup": "^3.29.4",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-json": "^6.0.1",
+    "rimraf": "^5.0.5"
+  },
   "files": [
     "bin/",
     "lib/",
+    "dist/",
     "swigger/",
     "templates/",
     "README.md",

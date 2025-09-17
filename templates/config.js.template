@@ -1,7 +1,9 @@
-module.exports = {
+import { defineConfig } from 'swigger2api';
+
+export default defineConfig({
   // 🎯 项目基本信息
   projectName: "my-project", // TODO: 修改为你的项目名称
-  language: "ts", // js | ts
+  language: "js", // js | ts
 
   // 📡 数据源配置 - 这是最重要的配置项
   // 可以是：
@@ -20,7 +22,7 @@ module.exports = {
   
   // 📦 请求库导入配置
   // TODO: 根据你的项目调整请求库导入语句
-  requestImport: "const axios = require('./request')", // 请求库导入语句
+  requestImport: "import axios from './request'", // 请求库导入语句
   
   // 📋 更新日志配置
   updateLog: {
@@ -49,4 +51,4 @@ module.exports = {
     //   return "customApiName";
     // },
   },
-};
+});

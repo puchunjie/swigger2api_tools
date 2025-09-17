@@ -20,16 +20,16 @@
     "code-generator",
     "cli"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "puchunjie",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/swigger2api.git"
+    "url": "https://github.com/puchunjie/swigger2api_tools.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/swigger2api/issues"
+    "url": "https://github.com/puchunjie/swigger2api_tools/issues"
   },
-  "homepage": "https://github.com/yourusername/swigger2api#readme",
+  "homepage": "https://github.com/puchunjie/swigger2api_tools#readme",
   "engines": {
     "node": ">=14.0.0"
   },

@@ -18,7 +18,7 @@ program
 program
   .command('init')
   .description('Initialize swigger2api configuration file')
-  .option('-l, --language <language>', 'specify language (js|ts)', 'ts')
+  .option('-l, --language <language>', 'specify language (js|ts)')
   .action(async (options) => {
     try {
       await initCommand(options);

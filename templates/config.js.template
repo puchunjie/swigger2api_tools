@@ -1,7 +1,7 @@
 module.exports = {
   // 🎯 项目基本信息
   projectName: "my-project", // TODO: 修改为你的项目名称
-  language: "js", // js | ts
+  language: "ts", // js | ts
 
   // 📡 数据源配置 - 这是最重要的配置项
   // 可以是：

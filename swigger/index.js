@@ -174,7 +174,8 @@ async function getSwaggerDataFromSource() {
       if (path.isAbsolute(source)) {
         filePath = source
       } else {
-        filePath = path.join(__dirname, '..', source)
+        // 使用当前工作目录而不是模块目录，这样相对路径就相对于配置文件所在目录
+        filePath = path.resolve(process.cwd(), source)
       }
       
       if (!fs.existsSync(filePath)) {
@@ -1277,10 +1278,10 @@ async function generateApiFiles(options = {}) {
     const groupedApis = groupApisByTag(swaggerData)
     
     // 确保输出目录存在
-    // 如果outputDir是相对路径，则相对于配置文件目录；如果是绝对路径，则直接使用
+    // 如果outputDir是相对路径，则相对于当前工作目录（配置文件目录）；如果是绝对路径，则直接使用
     const outputDir = path.isAbsolute(CONFIG.outputDir) 
       ? CONFIG.outputDir 
-      : path.resolve(CONFIG._configDir, CONFIG.outputDir)
+      : path.resolve(process.cwd(), CONFIG.outputDir)
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true })
     }

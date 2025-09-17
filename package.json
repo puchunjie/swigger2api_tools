@@ -1,6 +1,6 @@
 {
   "name": "swigger2api",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "description": "A powerful CLI tool to generate TypeScript/JavaScript API code from Swagger/OpenAPI documentation",
   "main": "lib/index.js",
   "bin": {
@@ -43,6 +43,7 @@
   "files": [
     "bin/",
     "lib/",
+    "swigger/",
     "templates/",
     "README.md",
     "LICENSE"

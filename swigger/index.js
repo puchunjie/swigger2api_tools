@@ -892,12 +892,15 @@ function generateModuleName(tag, path, operationId, tags) {
   }
   
   // 默认策略：使用标签名
-  return tag || 'other'
+  const finalModuleName = tag || 'other'
+  return finalModuleName
 }
 
 // 生成API文档JSON内容
 function generateApiDocsJson(tag, apis, swaggerData) {
-  const moduleName = generateModuleName(tag, apis[0]?.path, apis[0]?.apiInfo?.operationId, [tag])
+  // 获取第一个接口的所有标签
+  const firstApiTags = apis[0]?.apiInfo?.tags || [tag]
+  const moduleName = generateModuleName(tag, apis[0]?.path, apis[0]?.apiInfo?.operationId, firstApiTags)
   const moduleDescription = swaggerData.tags?.find(t => t.name === tag)?.description || ''
   const schemas = swaggerData.components?.schemas || swaggerData.definitions || {}
   
@@ -1361,7 +1364,9 @@ async function generateApiFiles(options = {}) {
     const isTypeScript = getConfig().language === 'ts'
     Object.keys(groupedApis).forEach(tag => {
       const apis = groupedApis[tag]
-      const moduleName = generateModuleName(tag, apis[0]?.path, apis[0]?.apiInfo?.operationId, [tag])
+      // 获取第一个接口的所有标签
+      const firstApiTags = apis[0]?.apiInfo?.tags || [tag]
+      const moduleName = generateModuleName(tag, apis[0]?.path, apis[0]?.apiInfo?.operationId, firstApiTags)
       
       if (apis.length === 0) return
 

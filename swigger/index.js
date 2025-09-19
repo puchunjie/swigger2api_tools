@@ -245,7 +245,10 @@ async function getSwaggerDataFromSource() {
 
 // 读取 Swagger JSON 文件（用于对比）
 function readSwaggerFile() {
-  const swaggerPath = path.join(__dirname, 'response.json')
+  const config = getConfig()
+  // 使用项目工作目录而不是swigger目录
+  const projectDir = config._projectDir || config._configDir || process.cwd()
+  const swaggerPath = path.join(projectDir, 'response.json')
   
   if (!fs.existsSync(swaggerPath)) {
     return null
@@ -264,7 +267,10 @@ function readSwaggerFile() {
 
 // 保存 Swagger 数据到本地文件
 function saveSwaggerData(swaggerData) {
-  const swaggerPath = path.join(__dirname, 'response.json')
+  const config = getConfig()
+  // 使用项目工作目录而不是swigger目录
+  const projectDir = config._projectDir || config._configDir || process.cwd()
+  const swaggerPath = path.join(projectDir, 'response.json')
   fs.writeFileSync(swaggerPath, JSON.stringify(swaggerData, null, 2), 'utf8')
 }
 

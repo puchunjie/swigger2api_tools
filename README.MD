@@ -73,15 +73,24 @@ export default defineConfig({
 ### 3. Generate API Code
 
 ```bash
-# Generate API code
+# If installed globally
 swigger2api generate
+
+# If installed locally (use npx)
+npx swigger2api generate
 
 # Force regeneration (even if no changes detected)
 swigger2api generate --force
+# or with npx
+npx swigger2api generate --force
 
 # Use custom config file
 swigger2api generate --config ./custom.config.js
+# or with npx
+npx swigger2api generate --config ./custom.config.js
 ```
+
+> **Note**: The `swigger2api` command can be used directly only when installed globally. If installed locally as a project dependency, you need to prefix it with `npx`.
 
 ## Configuration Options
 

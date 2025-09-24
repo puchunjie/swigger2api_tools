@@ -91,6 +91,9 @@ function fetchDataFromUrl(url) {
         return
       }
       
+      // 设置响应编码为 UTF-8，确保中文字符正确处理
+      response.setEncoding('utf8')
+      
       response.on('data', (chunk) => {
         data += chunk
       })
@@ -550,7 +553,16 @@ function generateFunctionName(operationId, method, path) {
 function generateComment(apiInfo) {
   const { summary, description } = apiInfo
   if (summary || description) {
-    return `// ${summary || description}`
+    // 清理注释内容，确保中文字符正确显示，移除可能导致问题的字符
+    const commentText = (summary || description)
+      .replace(/\r\n/g, ' ')  // 替换 Windows 换行符
+      .replace(/\n/g, ' ')    // 替换 Unix 换行符
+      .replace(/\r/g, ' ')    // 替换 Mac 换行符
+      .replace(/\t/g, ' ')    // 替换制表符
+      .replace(/\s+/g, ' ')   // 合并多个空格
+      .trim()                 // 去除首尾空格
+    
+    return `// ${commentText}`
   }
   return ''
 }

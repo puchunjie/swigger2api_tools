@@ -14,7 +14,10 @@
     "swigger2api": "./bin/swigger2api.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test/run-tests.js",
+    "test:quick": "node test/quick-test.js",
+    "test:clean": "node test/cleanup.js",
+    "pretest": "npm run test:clean",
     "prepublishOnly": "npm run build",
     "build": "rollup -c",
     "dev": "rollup -c -w",

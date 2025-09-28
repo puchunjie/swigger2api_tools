@@ -976,6 +976,72 @@ function generateApiDocsJson(tag, apis, swaggerData) {
   return apiDocsData
 }
 
+// 为合并模块生成API文档JSON内容
+function generateApiDocsJsonForMergedModule(moduleName, apis, swaggerData, originalTags) {
+  const schemas = swaggerData.components?.schemas || swaggerData.definitions || {}
+  
+  // 获取所有相关标签的描述信息
+  const tagDescriptions = originalTags.map(tag => {
+    const tagInfo = swaggerData.tags?.find(t => t.name === tag)
+    return tagInfo ? `${tag}: ${tagInfo.description || tag}` : tag
+  }).join(', ')
+  
+  const apiDocsData = {
+    moduleName: moduleName,
+    moduleDescription: `合并模块，包含以下标签: ${tagDescriptions}`,
+    englishTag: moduleName,
+    originalTags: originalTags, // 记录原始标签
+    apis: []
+  }
+  
+  apis.forEach(({ path, method, apiInfo }) => {
+    const apiDoc = {
+      path: path,
+      method: method.toUpperCase(),
+      summary: apiInfo.summary || '',
+      description: apiInfo.description || apiInfo.summary || '',
+      operationId: apiInfo.operationId,
+      originalTags: apiInfo.tags || [], // 记录每个API的原始标签
+      request: {},
+      response: {}
+    }
+    
+    // 处理请求参数
+    if (apiInfo.requestBody) {
+      const requestBodySchema = apiInfo.requestBody.content?.['application/json']?.schema
+      if (requestBodySchema) {
+        apiDoc.request.requestBody = parseSchemaToApiDoc(requestBodySchema, schemas)
+      }
+    }
+    
+    // 处理URL参数
+    if (apiInfo.parameters && apiInfo.parameters.length > 0) {
+      apiDoc.request.parameters = apiInfo.parameters.map(param => ({
+        name: param.name,
+        in: param.in,
+        required: param.required || false,
+        type: param.schema?.type || 'string',
+        description: param.description || ''
+      }))
+    }
+    
+    // 处理响应
+    if (apiInfo.responses) {
+      const successResponse = apiInfo.responses['200'] || apiInfo.responses['201']
+      if (successResponse) {
+        const responseSchema = successResponse.content?.['application/json']?.schema
+        if (responseSchema) {
+          apiDoc.response = parseSchemaToApiDoc(responseSchema, schemas)
+        }
+      }
+    }
+    
+    apiDocsData.apis.push(apiDoc)
+  })
+  
+  return apiDocsData
+}
+
 // 解析Schema为API文档格式
 function parseSchemaToApiDoc(schema, schemas = {}) {
   if (!schema) return {}
@@ -1362,7 +1428,30 @@ async function generateApiFiles(options = {}) {
     console.log('💾 已保存当前数据到 response.json')
 
     // 按标签分组API
-    const groupedApis = groupApisByTag(swaggerData)
+    const groupedApisByTag = groupApisByTag(swaggerData)
+    
+    // 按最终模块名重新分组API，解决模块名冲突时的接口整合问题
+    const groupedApisByModule = {}
+    Object.keys(groupedApisByTag).forEach(tag => {
+      const apis = groupedApisByTag[tag]
+      if (apis.length === 0) return
+      
+      // 获取第一个接口的所有标签
+      const firstApiTags = apis[0]?.apiInfo?.tags || [tag]
+      const moduleName = generateModuleName(tag, apis[0]?.path, apis[0]?.apiInfo?.operationId, firstApiTags)
+      
+      // 如果模块名已存在，合并接口；否则创建新模块
+      if (!groupedApisByModule[moduleName]) {
+        groupedApisByModule[moduleName] = {
+          apis: [],
+          tags: new Set() // 记录所有相关的原始标签
+        }
+      }
+      
+      // 合并接口
+      groupedApisByModule[moduleName].apis.push(...apis)
+      groupedApisByModule[moduleName].tags.add(tag)
+    })
     
     // 确保输出目录存在
     // 如果outputDir是相对路径，则相对于项目工作目录；如果是绝对路径，则直接使用
@@ -1377,14 +1466,13 @@ async function generateApiFiles(options = {}) {
 
     // 类型定义文件现在在每个模块内生成，不再生成全局types.ts
 
-    // 为每个标签生成对应的文件夹和文件
+    // 为每个模块生成对应的文件夹和文件
     const folderNames = []
     const isTypeScript = getConfig().language === 'ts'
-    Object.keys(groupedApis).forEach(tag => {
-      const apis = groupedApis[tag]
-      // 获取第一个接口的所有标签
-      const firstApiTags = apis[0]?.apiInfo?.tags || [tag]
-      const moduleName = generateModuleName(tag, apis[0]?.path, apis[0]?.apiInfo?.operationId, firstApiTags)
+    Object.keys(groupedApisByModule).forEach(moduleName => {
+      const moduleData = groupedApisByModule[moduleName]
+      const apis = moduleData.apis
+      const originalTags = Array.from(moduleData.tags)
       
       if (apis.length === 0) return
 
@@ -1410,27 +1498,33 @@ async function generateApiFiles(options = {}) {
         }
       }
 
-      // 生成接口定义文件
-      const apiFileContent = generateDocumentContent(tag, apis, swaggerData)
+      // 生成接口定义文件 - 使用第一个原始标签作为主标签
+      const primaryTag = originalTags[0]
+      const apiFileContent = generateDocumentContent(primaryTag, apis, swaggerData)
       const apiFileName = isTypeScript ? 'index.ts' : 'index.js'
       const apiFilePath = path.join(moduleFolderPath, apiFileName)
       fs.writeFileSync(apiFilePath, apiFileContent, 'utf8')
 
-      // 生成文档文件
-      const docContent = generateReadmeContent(tag, apis, swaggerData)
+      // 生成文档文件 - 使用第一个原始标签作为主标签
+      const docContent = generateReadmeContent(primaryTag, apis, swaggerData)
       const docFileName = 'README.md'
       const docFilePath = path.join(moduleFolderPath, docFileName)
       fs.writeFileSync(docFilePath, docContent, 'utf8')
 
-      // 生成API文档JSON文件
-      const apiDocsContent = generateApiDocsJson(tag, apis, swaggerData)
+      // 生成API文档JSON文件 - 使用第一个原始标签作为主标签，但包含所有标签信息
+      const apiDocsContent = generateApiDocsJsonForMergedModule(moduleName, apis, swaggerData, originalTags)
       const apiDocsFileName = 'api-docs.json'
       const apiDocsFilePath = path.join(moduleFolderPath, apiDocsFileName)
       fs.writeFileSync(apiDocsFilePath, JSON.stringify(apiDocsContent, null, 2), 'utf8')
 
        folderNames.push(moduleName)
        
-       console.log(`✅ 生成模块: ${moduleName}/ (${apis.length} 个接口)`)
+       // 显示模块信息，如果是合并模块则显示原始标签信息
+       if (originalTags.length > 1) {
+         console.log(`✅ 生成合并模块: ${moduleName}/ (${apis.length} 个接口，来自标签: ${originalTags.join(', ')})`)
+       } else {
+         console.log(`✅ 生成模块: ${moduleName}/ (${apis.length} 个接口)`)
+       }
         console.log(`   ├── ${apiFileName}`)
         if (isTypeScript && hasTypes) {
           console.log(`   ├── types.ts`)

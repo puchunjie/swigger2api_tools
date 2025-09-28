@@ -1,0 +1,591 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "测试API",
+    "description": "用于测试swigger2api工具的示例API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "本地开发服务器"
+    }
+  ],
+  "tags": [
+    {
+      "name": "user",
+      "description": "用户管理"
+    },
+    {
+      "name": "product",
+      "description": "产品管理"
+    },
+    {
+      "name": "order",
+      "description": "订单管理"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "tags": ["user"],
+        "summary": "获取用户列表",
+        "description": "分页获取用户列表",
+        "operationId": "getUserList",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "每页数量",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["user"],
+        "summary": "创建用户",
+        "description": "创建新用户",
+        "operationId": "createUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["user"],
+        "summary": "获取用户详情",
+        "description": "根据ID获取用户详情",
+        "operationId": "getUserById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "用户ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用户不存在"
+          }
+        }
+      },
+      "put": {
+        "tags": ["user"],
+        "summary": "更新用户",
+        "description": "更新用户信息",
+        "operationId": "updateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "用户ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["user"],
+        "summary": "删除用户",
+        "description": "删除指定用户",
+        "operationId": "deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "用户ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "删除成功"
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["product"],
+        "summary": "获取产品列表",
+        "description": "获取产品列表",
+        "operationId": "getProductList",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "产品分类",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["product"],
+        "summary": "创建产品",
+        "description": "创建新产品",
+        "operationId": "createProduct",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "tags": ["order"],
+        "summary": "获取订单列表",
+        "description": "获取用户订单列表",
+        "operationId": "getOrderList",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "用户ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "订单状态",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "paid", "shipped", "delivered", "cancelled"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["order"],
+        "summary": "创建订单",
+        "description": "创建新订单",
+        "operationId": "createOrder",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "required": ["id", "username", "email"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "用户ID"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "邮箱"
+          },
+          "phone": {
+            "type": "string",
+            "description": "手机号"
+          },
+          "avatar": {
+            "type": "string",
+            "description": "头像URL"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间"
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "required": ["username", "email", "password"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "邮箱"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "description": "密码"
+          },
+          "phone": {
+            "type": "string",
+            "description": "手机号"
+          }
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "邮箱"
+          },
+          "phone": {
+            "type": "string",
+            "description": "手机号"
+          },
+          "avatar": {
+            "type": "string",
+            "description": "头像URL"
+          }
+        }
+      },
+      "UserListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总数"
+          },
+          "page": {
+            "type": "integer",
+            "description": "当前页"
+          },
+          "size": {
+            "type": "integer",
+            "description": "每页数量"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "required": ["id", "name", "price"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "产品ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "产品名称"
+          },
+          "description": {
+            "type": "string",
+            "description": "产品描述"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "价格"
+          },
+          "category": {
+            "type": "string",
+            "description": "分类"
+          },
+          "stock": {
+            "type": "integer",
+            "description": "库存"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "产品图片"
+          }
+        }
+      },
+      "CreateProductRequest": {
+        "type": "object",
+        "required": ["name", "price"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "产品名称"
+          },
+          "description": {
+            "type": "string",
+            "description": "产品描述"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "价格"
+          },
+          "category": {
+            "type": "string",
+            "description": "分类"
+          },
+          "stock": {
+            "type": "integer",
+            "description": "库存"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": ["id", "userId", "status", "totalAmount"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "订单ID"
+          },
+          "userId": {
+            "type": "integer",
+            "description": "用户ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "paid", "shipped", "delivered", "cancelled"],
+            "description": "订单状态"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "decimal",
+            "description": "总金额"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            },
+            "description": "订单项"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间"
+          }
+        }
+      },
+      "OrderItem": {
+        "type": "object",
+        "required": ["productId", "quantity", "price"],
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "description": "产品ID"
+          },
+          "productName": {
+            "type": "string",
+            "description": "产品名称"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "数量"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "单价"
+          }
+        }
+      },
+      "CreateOrderRequest": {
+        "type": "object",
+        "required": ["userId", "items"],
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "description": "用户ID"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["productId", "quantity"],
+              "properties": {
+                "productId": {
+                  "type": "integer",
+                  "description": "产品ID"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "description": "数量"
+                }
+              }
+            },
+            "description": "订单项"
+          }
+        }
+      }
+    }
+  }
+}
